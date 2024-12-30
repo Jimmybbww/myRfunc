@@ -1,19 +1,26 @@
 Package: myRfunc
-Title: Custom Themes for GT and GTsummary Tables
+Title: Custom Themes for Various Table Packages in R
 Version: 0.1.0
 Authors@R: 
     person(given = "Jimmy",
            family = "Chen",
            role = c("aut", "cre"),
            email = "your.email@example.com")
-Description: Provides custom themes for gt and gtsummary tables in R. 
-    Includes functions for creating consistent and professional-looking tables 
-    with various styling options such as background colors, borders, and text formatting.
+Description: Provides custom themes and utilities for various table packages in R,
+    including gt, gtsummary, huxtable, flextable, and openxlsx. Features include
+    consistent styling options, export capabilities, and professional-looking
+    table formatting across different output formats.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
-Imports: 
+Depends:
+    R (>= 3.5.0),
     gt,
     gtsummary,
+    huxtable,
+    flextable,
+    openxlsx
+Imports:
     rlang
+Config/testthat/edition: 3
