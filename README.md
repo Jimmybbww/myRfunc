@@ -1,6 +1,6 @@
 # myRfunc
 
-A collection of R functions for customizing gt and gtsummary table themes
+A collection of R functions for customizing table themes and formats
 
 ## Installation
 
@@ -11,6 +11,12 @@ You can install the development version of myRfunc from GitHub with:
 devtools::install_github("Jimmybbww/myRfunc")
 ```
 
+Loading this package will automatically load: gt, gtsummary, huxtable, flextable, and openxlsx.
+
+```r
+library(myRfunc)
+```
+
 ## Usage
 
 ### theme_gtsummary_style
@@ -18,9 +24,6 @@ devtools::install_github("Jimmybbww/myRfunc")
 Customize the appearance of gtsummary tables:
 
 ```r
-library(myRfunc)
-library(gtsummary)
-
 # Apply a striped theme
 theme_gtsummary_style(
   style = "strip",
@@ -34,9 +37,6 @@ theme_gtsummary_style(
 Customize the appearance of gt tables:
 
 ```r
-library(myRfunc)
-library(gt)
-
 # Create a gt table with background color theme
 my_data %>%
   gt() %>%
