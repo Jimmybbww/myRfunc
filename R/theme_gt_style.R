@@ -1,29 +1,49 @@
-#' Custom Theme for gt Tables
+#' Create a Custom Theme for gt Tables
 #'
-#' @param gt_object A gt table object
-#' @param style Character string specifying the style ('strip', 'bw', or 'bg')
-#' @param title Optional title for the table
+#' This function provides a customizable theme for gt tables with various styling options.
+#' It allows for consistent table formatting with options for different background styles,
+#' border configurations, and text formatting.
+#'
+#' @param gt_object A gt table object created with gt::gt()
+#' @param style Character string specifying the style. One of:
+#'   \itemize{
+#'     \item "strip": Striped rows with white background
+#'     \item "bw": Black and white theme
+#'     \item "bg": Solid background color
+#'   }
+#' @param title Optional title for the table. Will be displayed in bold if provided.
 #' @param subtitle Optional subtitle for the table
-#' @param bg.color Background color for the table
-#' @param strip.bg.color Background color for striped rows
-#' @return A modified gt table object
+#' @param bg.color Background color for the table. Default is "#F2F1E9"
+#' @param strip.bg.color Background color for striped rows. Default is "#FFFAEE"
+#'
+#' @return A modified gt table object with the specified theme applied
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' library(gt)
-#' # Create a sample data frame
+#' # Create sample data
 #' data <- data.frame(
-#'   x = 1:3,
-#'   y = letters[1:3]
+#'   Category = c("A", "B", "C"),
+#'   Value = c(100, 200, 300),
+#'   Change = c("+10%", "-5%", "+15%")
 #' )
-#' # Apply theme to gt table
+#'
+#' # Create a gt table with background color theme
 #' data %>%
 #'   gt() %>%
 #'   theme_gt_style(
 #'     style = "bg",
-#'     title = "My Table",
+#'     title = "Sales Report",
 #'     bg.color = "#F2F1E9"
+#'   )
+#'
+#' # Create a table with striped theme
+#' data %>%
+#'   gt() %>%
+#'   theme_gt_style(
+#'     style = "strip",
+#'     title = "Financial Overview",
+#'     strip.bg.color = "#FFFAEE"
 #'   )
 #' }
 theme_gt_style <- function(gt_object,
