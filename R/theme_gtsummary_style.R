@@ -1,22 +1,38 @@
-#' Custom Theme for gtsummary Tables
+#' Create a Custom Theme for gtsummary Tables
 #'
-#' @param style Character string specifying the style ('strip', 'bw', or 'bg')
-#' @param title Optional title for the table
+#' This function provides a customizable theme for gtsummary tables with various
+#' styling options including background colors, borders, and text formatting.
+#'
+#' @param style Character string specifying the style. One of:
+#'   \itemize{
+#'     \item "strip": Striped rows with white background
+#'     \item "bw": Black and white theme
+#'     \item "bg": Solid background color
+#'   }
+#' @param title Optional title for the table. Will be displayed in bold if provided.
 #' @param subtitle Optional subtitle for the table
-#' @param bg.color Background color for the table
-#' @param strip.bg.color Background color for striped rows
-#' @param set_theme Logical; whether to set the theme globally
-#' @return A gtsummary theme list
+#' @param bg.color Background color for the table. Default is "#F2F1E9"
+#' @param strip.bg.color Background color for striped rows. Default is "#FFFAEE"
+#' @param set_theme Logical; whether to set the theme globally. Default is TRUE
+#'
+#' @return A gtsummary theme list that can be used with gtsummary tables
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' # Create sample data
+#' data <- trial
+#'
 #' # Apply a striped theme
 #' theme_gtsummary_style(
 #'   style = "strip",
-#'   title = "My Table",
+#'   title = "Clinical Trial Results",
 #'   strip.bg.color = "#FFFAEE"
 #' )
+#'
+#' # Create a table with the theme
+#' data %>%
+#'   tbl_summary()
 #' }
 theme_gtsummary_style <- function(style,
                                  title = NULL,
