@@ -1,5 +1,5 @@
 Package: myRfunc
-Title: Custom Themes for Various Table Packages in R
+Title: Custom Themes and Visualization Tools for R Tables
 Version: 0.1.0
 Authors@R: 
     person(given = "Jimmy",
@@ -8,8 +8,8 @@ Authors@R:
            email = "your.email@example.com")
 Description: Provides custom themes and utilities for various table packages in R,
     including gt, gtsummary, huxtable, flextable, and openxlsx. Features include
-    consistent styling options, export capabilities, and professional-looking
-    table formatting across different output formats.
+    consistent styling options, forest plots, and professional-looking table formatting
+    across different output formats.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -22,5 +22,11 @@ Depends:
     flextable,
     openxlsx
 Imports:
-    rlang
+    rlang,
+    ggplot2,
+    dplyr,
+    patchwork,
+    paletteer,
+    forcats,
+    tidyselect
 Config/testthat/edition: 3

@@ -2,3 +2,11 @@
 
 export(theme_gtsummary_style)
 export(theme_gt_style)
+export(tabular_forest)
+
+import(ggplot2)
+import(dplyr)
+import(patchwork)
+import(paletteer)
+import(forcats)
+import(tidyselect)
