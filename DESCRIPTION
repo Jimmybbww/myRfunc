@@ -1,6 +1,6 @@
 Package: myRfunc
 Title: Custom Themes and Visualization Tools for R Tables
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person(given = "Jimmy",
            family = "Chen",
@@ -28,5 +28,7 @@ Imports:
     patchwork,
     paletteer,
     forcats,
-    tidyselect
+    tidyselect,
+    grid,
+    scales
 Config/testthat/edition: 3
