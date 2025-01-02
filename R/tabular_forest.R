@@ -218,7 +218,8 @@ tabular_forest <- function(data,
 
     if (!is.null(table_theme)) {
         p_left <- p_left + table_theme + 
-            theme(axis.ticks.y = element_blank(),
+            theme(text = element_text(family = font_family),
+                  axis.ticks.y = element_blank(),
                   axis.text.y = ggtext::element_markdown(hjust = 0)
                  )
     }
