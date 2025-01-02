@@ -85,7 +85,7 @@ tabular_forest <- function(data,
     empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
     names(empty_row) <- names(data)
     empty_row[[seq_col]] <- 0
-    empty_row[[label_col]] <- label_text
+    empty_row[[label_col]] <- sprintf("**%s**", label_text)
     if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
 
     # 繪圖資料
@@ -200,7 +200,7 @@ tabular_forest <- function(data,
             text = element_text(family = font_family),
             axis.title = element_text(face = "bold"),
             axis.text = element_text(face = "bold"),
-            axis.text.y = element_text(hjust = 0),
+            axis.text.y = ggtext::element_markdown(hjust = 0),
             legend.title = element_text(face = "bold"),
             axis.ticks.y = element_blank(),
             panel.border = element_blank(),
@@ -217,7 +217,9 @@ tabular_forest <- function(data,
     }
 
     if (!is.null(table_theme)) {
-        p_left <- p_left + table_theme
+        p_left <- p_left + table_theme + 
+            theme(axis.ticks.y = element_blank(),
+                  axis.text.y = element_text(hjust = 0))
     }
 
     # 右側數值標籤
