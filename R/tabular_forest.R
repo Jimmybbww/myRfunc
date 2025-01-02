@@ -15,6 +15,7 @@
 #' @param point_shape Shape of the points (default: 22)
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
+#' @param color_map List of color map (default: NULL)
 #' @param table_theme Custom theme for the plot (default: NULL)
 #' @param xlim Limits for x-axis (default: NULL)
 #'
@@ -62,6 +63,7 @@ tabular_forest <- function(data,
                           point_shape = 22,
                           table_font_size = 3.2,
                           font_family = "Arial",
+                          color_map = NULL,
                           table_theme = NULL,
                           xlim = NULL) {
     
@@ -211,10 +213,12 @@ tabular_forest <- function(data,
             axis.line.x = element_line(color = "black")
         )
 
-    if (!is.null(grp_col)) {
-        p_left <- p_left + scale_fill_manual(values = fcmap(NULL), na.translate = F)
+    if (!is.null(color_map)) {
+      p_left <- p_left + scale_fill_manual(values = fcmap(color_map), na.translate = F)
+    } else if (is.null(grp_col)) {
+      p_left <- p_left + update_geom_defaults(geom = 'point', new = c(fill = 'grey50'))
     } else {
-        p_left <- p_left + update_geom_defaults(geom = 'point', new = c(fill = 'grey50'))
+      p_left <- p_left + scale_fill_manual(values = fcmap(color_map), na.translate = F)
     }
 
     if (!is.null(table_theme)) {
