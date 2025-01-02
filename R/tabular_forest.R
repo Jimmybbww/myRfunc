@@ -138,10 +138,12 @@ tabular_forest <- function(data,
     # 左側forest plot
     p_left <- ggplot(aes(!!!base_aes), data = p_data) +
         theme_bw() +
-        geom_vline(xintercept = null_line_at,
-                  linetype = "dashed",
-                  color = "gray30",
-                  size = 0.5) +
+        geom_segment(x = null_line_at, xend = null_line_at,
+                   y = 0,
+                   yend = nrow(data)+.3,
+                   linetype = "dashed", 
+                   color = "gray30", 
+                   size = 0.5) +
         geom_errorbar(aes(xmin = .data[[lcl_col]],
                         xmax = .data[[ucl_col]]),
                     width = 0.15,
