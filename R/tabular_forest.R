@@ -1,9 +1,5 @@
 #' Create a Forest Plot with Tabular Data
 #'
-#' This function creates a forest plot combined with a table of results. It is
-#' particularly useful for visualizing odds ratios, risk ratios, or other
-#' effect measures with confidence intervals.
-#'
 #' @param data A data frame containing the data to plot
 #' @param label_col Column name for labels (default: 'Label')
 #' @param est_col Column name for point estimates (default: "OR")
@@ -11,13 +7,16 @@
 #' @param ucl_col Column name for upper confidence limits (default: "UCL")
 #' @param grp_col Optional column name for grouping (default: NULL)
 #' @param seq_col Column name for sequence/ordering (default: "seq")
-#' @param x_lab Label for x-axis (default: "OR (95% CI)")
-#' @param vline Position of vertical reference line (default: 1)
-#' @param fill_lab Label for fill legend (default: NULL)
-#' @param color_map Named vector for custom color mapping (default: NULL)
-#' @param save_path Path to save the plot (default: NULL)
-#' @param width Plot width in inches when saving (default: 12)
-#' @param height Plot height in inches when saving (default: 9)
+#' @param label_text Text for empty row label (default: "Label")
+#' @param ci_sep Separator for confidence intervals (default: " to ")
+#' @param null_line_at Position of reference line (default: 1)
+#' @param arrows Whether to show arrows for out-of-bounds values (default: FALSE)
+#' @param point_size Size of the points (default: 2.5)
+#' @param point_shape Shape of the points (default: 22)
+#' @param table_font_size Font size for the table (default: 3.2)
+#' @param font_family Font family (default: "Arial")
+#' @param table_theme Custom theme for the plot (default: NULL)
+#' @param xlim Limits for x-axis (default: NULL)
 #'
 #' @return A list with class 'forest_plot' containing three components:
 #'   \itemize{
@@ -33,39 +32,39 @@
 #' # Create sample data
 #' data <- data.frame(
 #'   Label = c("Group A", "Group B", "Group C"),
-#'   OR = c(1.5, 0.8, 2.1),
-#'   LCL = c(0.9, 0.5, 1.4),
-#'   UCL = c(2.1, 1.1, 2.8),
+#'   OR = c(1.5, 8.2, 0.3),
+#'   LCL = c(0.9, 6.5, 0.1),
+#'   UCL = c(2.1, 12.5, 0.8),
 #'   seq = 1:3
 #' )
 #'
-#' # Create basic forest plot
+#' # Basic forest plot
 #' tabular_forest(data)
 #'
-#' # Add grouping and custom colors
-#' data$Group <- c("X", "X", "Y")
-#' tabular_forest(
-#'   data,
-#'   grp_col = "Group",
-#'   color_map = c(X = "blue", Y = "red")
-#' )
+#' # Forest plot with arrows for out-of-bounds values
+#' tabular_forest(data,
+#'                xlim = c(0.5, 5),
+#'                arrows = TRUE,
+#'                null_line_at = 1)
 #' }
-tabular_forest <- function(
-    data,
-    label_col = 'Label',
-    est_col = "OR",
-    lcl_col = "LCL",
-    ucl_col = "UCL",
-    grp_col = NULL,
-    seq_col = "seq",
-    x_lab = "OR (95% CI)",
-    vline = 1,
-    fill_lab = NULL,
-    color_map = NULL,
-    save_path = NULL,
-    width = 12,
-    height = 9
-) {
+tabular_forest <- function(data,
+                          label_col = 'Label',
+                          est_col = "OR",
+                          lcl_col = "LCL",
+                          ucl_col = "UCL",
+                          grp_col = NULL,
+                          seq_col = "seq",
+                          label_text = "Label",
+                          ci_sep = " to ",
+                          null_line_at = 1,
+                          arrows = FALSE,
+                          point_size = 2.5,
+                          point_shape = 22,
+                          table_font_size = 3.2,
+                          font_family = "Arial",
+                          table_theme = NULL,
+                          xlim = NULL) {
+    
     # 檢查輸入數據
     required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
     missing_cols <- setdiff(required_cols, names(data))
@@ -86,24 +85,25 @@ tabular_forest <- function(
     empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
     names(empty_row) <- names(data)
     empty_row[[seq_col]] <- 0
-    empty_row[[label_col]] <- ""
+    empty_row[[label_col]] <- label_text
     if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
 
     # 繪圖資料
-    p_data <-
-        rbind(empty_row, data) |>
+    p_data <- 
+        rbind(empty_row, data) |> 
         select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)))
-
+    
     p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
 
     # 創建標籤
     p_data$text <- ifelse(
         is.na(p_data[[est_col]]),
         'OR (95% CI)',
-        sprintf("%.2f (%.2f-%.2f)",
-            p_data[[est_col]],
-            p_data[[lcl_col]],
-            p_data[[ucl_col]])
+        sprintf("%.2f (%.2f%s%.2f)",
+                p_data[[est_col]],
+                p_data[[lcl_col]],
+                ci_sep,
+                p_data[[ucl_col]])
     )
 
     # 預設顏色映射
@@ -144,14 +144,14 @@ tabular_forest <- function(
                     alpha = .8,
                     color = 'gray20',
                     size = .35) +
-        geom_point(color = 'black', size = 2.5, shape = 22) +
-        geom_segment(x = vline, xend = vline,
-                    y = 0,
-                    yend = nrow(data)+.3,
-                    linetype = "dashed",
-                    color = "gray30",
-                    size = 0.5) +
-        labs(x = x_lab, y = '', fill = fill_lab) +
+        geom_point(color = 'black',
+                  size = point_size,
+                  shape = point_shape) +
+        geom_vline(xintercept = null_line_at,
+                  linetype = "dashed",
+                  color = "gray30",
+                  size = 0.5) +
+        labs(x = "OR (95% CI)", y = '', fill = NULL) +
         guides(fill = guide_legend(override.aes = list(size = 4),
                                 position = "top")) +
         theme(
@@ -165,16 +165,56 @@ tabular_forest <- function(
             panel.grid.minor = element_blank(),
             panel.background = element_blank(),
             axis.line.x = element_line(color = "black")
-        ) +
-        scale_fill_manual(values = fcmap(color_map), na.translate = F)
+        )
 
-    if (is.null(grp_col)) {
+    if (!is.null(grp_col)) {
+        p_left <- p_left + scale_fill_manual(values = fcmap(NULL), na.translate = F)
+    } else {
         p_left <- p_left + update_geom_defaults(geom = 'point', new = c(fill = 'grey50'))
+    }
+
+    # 應用自定義主題
+    if (!is.null(table_theme)) {
+        p_left <- p_left + table_theme
+    }
+
+    # 檢查是否需要添加箭頭
+    if (arrows && !is.null(xlim)) {
+        # 創建箭頭數據
+        arrow_data <- p_data[!is.na(p_data[[est_col]]), ]
+        
+        # 建立右側箭頭數據（超過上限）
+        right_arrows <- arrow_data[arrow_data[[ucl_col]] > xlim[2], ]
+        if (nrow(right_arrows) > 0) {
+            p_left <- p_left +
+                geom_segment(data = right_arrows,
+                           aes(x = .data[[est_col]],
+                               xend = xlim[2],
+                               y = .data[[seq_col]],
+                               yend = .data[[seq_col]]),
+                           arrow = arrow(length = unit(0.2, "cm")))
+        }
+        
+        # 建立左側箭頭數據（低於下限）
+        left_arrows <- arrow_data[arrow_data[[lcl_col]] < xlim[1], ]
+        if (nrow(left_arrows) > 0) {
+            p_left <- p_left +
+                geom_segment(data = left_arrows,
+                           aes(x = .data[[est_col]],
+                               xend = xlim[1],
+                               y = .data[[seq_col]],
+                               yend = .data[[seq_col]]),
+                           arrow = arrow(length = unit(0.2, "cm")))
+        }
+        
+        # 設定 x 軸範圍
+        p_left <- p_left + 
+            scale_x_continuous(limits = xlim)
     }
 
     # 右側數值標籤
     p_right <- ggplot(data = p_data) +
-        scale_y_discrete(limits = rev(p_data[[seq_col]]) ) +
+        scale_y_discrete(limits = rev(p_data[[seq_col]])) +
         geom_text(
             aes(
                 x = 0,
@@ -182,10 +222,12 @@ tabular_forest <- function(
                 label = text
             ),
             fontface = ifelse(is.na(p_data[[est_col]]), "bold", "plain"),
-            size = 3.5,
-            hjust = 0
+            size = table_font_size,
+            hjust = 0,
+            color = "grey20"
         ) +
-        theme_void()
+        theme_void() +
+        theme(text = element_text(family = font_family))
 
     # 定義佈局
     layout <- c(
@@ -195,17 +237,6 @@ tabular_forest <- function(
 
     # 組合圖形
     final_plot <- p_left + p_right + plot_layout(design = layout)
-
-    # 如果提供儲存路徑，則儲存圖片
-    if (!is.null(save_path)) {
-        tiff(save_path,
-            width = width,
-            height = height,
-            units = "in",
-            res = 300)
-        print(final_plot)
-        dev.off()
-    }
 
     # 創建結果列表並設定類別
     result <- structure(
@@ -217,7 +248,7 @@ tabular_forest <- function(
         class = c("forest_plot", "meta_plot")
     )
 
-    # 定義打印方法為本地函數
+    # 定義打印方法
     print.forest_plot <<- function(x, ...) {
         print(x$final)
     }
