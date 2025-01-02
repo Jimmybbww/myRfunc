@@ -1,6 +1,52 @@
 #' Create a Forest Plot with Tabular Data
 #'
-#' [previous documentation remains the same...]
+#' @param data A data frame containing the data to plot
+#' @param label_col Column name for labels (default: 'Label')
+#' @param est_col Column name for point estimates (default: "OR")
+#' @param lcl_col Column name for lower confidence limits (default: "LCL")
+#' @param ucl_col Column name for upper confidence limits (default: "UCL")
+#' @param grp_col Optional column name for grouping (default: NULL)
+#' @param seq_col Column name for sequence/ordering (default: "seq")
+#' @param label_text Text for empty row label (default: "Label")
+#' @param ci_sep Separator for confidence intervals (default: " to ")
+#' @param null_line_at Position of reference line (default: 1)
+#' @param arrows Whether to show arrows for out-of-bounds values (default: FALSE)
+#' @param point_size Size of the points (default: 2.5)
+#' @param point_shape Shape of the points (default: 22)
+#' @param table_font_size Font size for the table (default: 3.2)
+#' @param font_family Font family (default: "Arial")
+#' @param table_theme Custom theme for the plot (default: NULL)
+#' @param xlim Limits for x-axis (default: NULL)
+#'
+#' @return A list with class 'forest_plot' containing three components:
+#'   \itemize{
+#'     \item final: The combined forest plot with table
+#'     \item left: The forest plot component
+#'     \item right: The table component
+#'   }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Create sample data
+#' data <- data.frame(
+#'   Label = c("Group A", "Group B", "Group C"),
+#'   OR = c(1.5, 8.2, 0.3),
+#'   LCL = c(0.9, 6.5, 0.1),
+#'   UCL = c(2.1, 12.5, 0.8),
+#'   seq = 1:3
+#' )
+#'
+#' # Basic forest plot
+#' tabular_forest(data)
+#'
+#' # Forest plot with arrows for out-of-bounds values
+#' tabular_forest(data,
+#'                xlim = c(0.5, 5),
+#'                arrows = TRUE,
+#'                null_line_at = 1)
+#' }
 tabular_forest <- function(data,
                           label_col = 'Label',
                           est_col = "OR",
@@ -19,8 +65,76 @@ tabular_forest <- function(data,
                           table_theme = NULL,
                           xlim = NULL) {
     
-    # [previous code remains the same until the plot section...]
+    # 檢查輸入數據
+    required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
+    missing_cols <- setdiff(required_cols, names(data))
+    if (length(missing_cols) > 0) {
+        stop(sprintf("Missing required columns: %s", paste(missing_cols, collapse = ", ")))
+    }
+
+    if (!is.null(grp_col) && !(grp_col %in% names(data))) {
+        stop(sprintf("Group column '%s' not found in data", grp_col))
+    }
+
+    # 確保數值欄位是數值型
+    data[[est_col]] <- as.numeric(data[[est_col]])
+    data[[lcl_col]] <- as.numeric(data[[lcl_col]])
+    data[[ucl_col]] <- as.numeric(data[[ucl_col]])
+
+    # 準備資料
+    empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
+    names(empty_row) <- names(data)
+    empty_row[[seq_col]] <- 0
+    empty_row[[label_col]] <- label_text
+    if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
+
+    # 繪圖資料
+    p_data <- 
+        rbind(empty_row, data) |> 
+        select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)))
     
+    p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
+
+    # 創建標籤
+    p_data$text <- ifelse(
+        is.na(p_data[[est_col]]),
+        'OR (95% CI)',
+        sprintf("%.2f (%.2f%s%.2f)",
+                p_data[[est_col]],
+                p_data[[lcl_col]],
+                ci_sep,
+                p_data[[ucl_col]])
+    )
+
+    # 預設顏色映射
+    if(!is.null(grp_col)) {
+        grp_lv = levels(as.factor(p_data[[grp_col]]))
+        pal = paletteer::paletteer_d("ggsci::default_igv", length(grp_lv)) |> as.character()
+    } else {
+        grp_lv = NA
+        pal = NA
+    }
+
+    # 自訂顏色映射
+    fcmap = function(color_map) {
+        if (!is.null(color_map)) {
+            color_map
+        } else {
+            setNames(pal, grp_lv)
+        }
+    }
+
+    # 基礎圖形審美設定
+    base_aes <- list(
+        x = quo(!!sym(est_col)),
+        y = quo(fct_rev(!!sym(seq_col)))
+    )
+
+    # 如果有分組，加入填充審美
+    if (!is.null(grp_col)) {
+        base_aes$fill <- quo(!!sym(grp_col))
+    }
+
     # 左側forest plot
     p_left <- ggplot(aes(!!!base_aes), data = p_data) +
         theme_bw() +
@@ -69,6 +183,7 @@ tabular_forest <- function(data,
                            arrow = arrow(length = unit(0.2, "cm")))
         }
         
+        # 設定 x 軸範圍
         p_left <- p_left + 
             scale_x_continuous(limits = xlim)
     }
@@ -82,7 +197,7 @@ tabular_forest <- function(data,
         guides(fill = guide_legend(override.aes = list(size = 4),
                                 position = "top")) +
         theme(
-            text = element_text(family = font_family),  # 修改：移到這裡
+            text = element_text(family = font_family),
             axis.title = element_text(face = "bold"),
             axis.text = element_text(face = "bold"),
             axis.text.y = element_text(hjust = 0),
@@ -114,7 +229,7 @@ tabular_forest <- function(data,
                 y = .data[[seq_col]],
                 label = text
             ),
-            family = font_family,  # 修改：移到這裡
+            family = font_family,
             fontface = ifelse(is.na(p_data[[est_col]]), "bold", "plain"),
             size = table_font_size,
             hjust = 0,
@@ -122,4 +237,29 @@ tabular_forest <- function(data,
         ) +
         theme_void()
 
-    # [remaining code stays the same...]
+    # 定義佈局
+    layout <- c(
+        area(t = 0, l = 0, b = 30, r = 6),
+        area(t = 0, l = 3, b = 30, r = 11)
+    )
+
+    # 組合圖形
+    final_plot <- p_left + p_right + plot_layout(design = layout)
+
+    # 創建結果列表並設定類別
+    result <- structure(
+        list(
+            final = final_plot,
+            left = p_left,
+            right = p_right
+        ),
+        class = c("forest_plot", "meta_plot")
+    )
+
+    # 定義打印方法
+    print.forest_plot <<- function(x, ...) {
+        print(x$final)
+    }
+
+    return(result)
+}
