@@ -142,8 +142,8 @@ tabular_forest <- function(data,
                    y = 0,
                    yend = nrow(data)+.3,
                    linetype = "dashed", 
-                   color = "gray30", 
-                   size = 0.5) +
+                   color = "gray50", 
+                   size = 0.35) +
         geom_errorbar(aes(xmin = .data[[lcl_col]],
                         xmax = .data[[ucl_col]]),
                     width = 0.15,
@@ -201,7 +201,6 @@ tabular_forest <- function(data,
         theme(
             text = element_text(family = font_family),
             axis.title = element_text(face = "bold"),
-            axis.text.x = element_text(face = "bold"),
             axis.text.y = ggtext::element_markdown(hjust = 0),
             legend.title = element_text(face = "bold"),
             axis.ticks.y = element_blank(),
