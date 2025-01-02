@@ -1,6 +1,6 @@
 Package: myRfunc
 Title: Custom Themes and Visualization Tools for R Tables
-Version: 0.5.0
+Version: 0.6.0
 Authors@R: 
     person(given = "Jimmy",
            family = "Chen",
