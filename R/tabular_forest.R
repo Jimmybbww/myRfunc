@@ -8,16 +8,18 @@
 #' @param grp_col Optional column name for grouping (default: NULL)
 #' @param seq_col Column name for sequence/ordering (default: "seq")
 #' @param label_text Text for empty row label (default: "Label")
+#' @param label_table Text for table label (default: "OR (95% CI)")
+#' @param label_axis Text for x-axis label (default: "OR (95% CI)")
 #' @param ci_sep Separator for confidence intervals (default: " to ")
 #' @param null_line_at Position of reference line (default: 1)
 #' @param arrows Whether to show arrows for out-of-bounds values (default: FALSE)
+#' @param xlim Limits for x-axis (default: NULL)
 #' @param point_size Size of the points (default: 2.5)
 #' @param point_shape Shape of the points (default: 22)
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
 #' @param plot_theme Custom theme for the plot (default: NULL)
-#' @param xlim Limits for x-axis (default: NULL)
 #'
 #' @return A list with class 'forest_plot' containing three components:
 #'   \itemize{
@@ -49,7 +51,7 @@
 #'                grp_col = 'grp',
 #'                label_text = "Variables",
 #'                label_table = "HR (95% CI)",
-#'                label_axis = "Hazard Ratio (95% Confidence Intervals)",
+#'                label_axis = "\nHazard Ratio (95% CI)",
 #'                color_map = c("red", "blue", "green"), 
 #'                arrow = T, 
 #'                xlim = c(0.5, 2.2),
