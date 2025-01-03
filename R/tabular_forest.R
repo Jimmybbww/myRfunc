@@ -16,7 +16,7 @@
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
-#' @param table_theme Custom theme for the plot (default: NULL)
+#' @param plot_theme Custom theme for the plot (default: NULL)
 #' @param xlim Limits for x-axis (default: NULL)
 #'
 #' @return A list with class 'forest_plot' containing three components:
@@ -30,42 +30,58 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Create sample data
-#' data <- data.frame(
-#'   Label = c("Group A", "Group B", "Group C"),
-#'   OR = c(1.5, 8.2, 0.3),
-#'   LCL = c(0.9, 6.5, 0.1),
-#'   UCL = c(2.1, 12.5, 0.8),
-#'   seq = 1:3
-#' )
+#' # Create example data
+#' example_data <- data.frame(
+#'   Label = paste0("Variable", 1:6),
+#'   OR = c(1.25, 1.50, 0.85, 1.75, 1.15, 1.5),
+#'   LCL = c(1.10, 1.25, 0.2, 0.9, 0.95, 1.2),
+#'   UCL = c(1.40, 1.75, 1.5, 2.6, 1.35, 2.0),
+#'   grp = paste0('Group ', LETTERS[rep(1:3, each=2)]),
+#'   seq = 1:6
+#'   )
 #'
 #' # Basic forest plot
-#' tabular_forest(data)
+#' tabular_forest(example_data[,-5])
+#' tabular_forest(example_data, grp_col = 'grp')
 #'
-#' # Forest plot with arrows for out-of-bounds values
-#' tabular_forest(data,
-#'                xlim = c(0.5, 5),
-#'                arrows = TRUE,
-#'                null_line_at = 1)
+#' # Other customized forest plot
+#' tabular_forest(example_data, 
+#'                grp_col = 'grp',
+#'                label_text = "Variables",
+#'                label_axis = "Hazard Ratio (95% Confidence Intervals)",
+#'                color_map = c("red", "blue", "green"), 
+#'                arrow = T, 
+#'                xlim = c(0.5, 2.2),
+#'                ci_sep = ", ",
+#'                point_size = 3, 
+#'                point_shape = 21, 
+#'                font_family = "mono",
+#'                table_font_size = 4.2,
+#'                plot_theme = theme(legend.text = element_text(size = 12), 
+#'                                   axis.text = element_text(size = 12),
+#'                                   axis.title.x = element_text(size = 14)
+#'                                   )
+#'                )
 #' }
 tabular_forest <- function(data,
-                          label_col = 'Label',
-                          est_col = "OR",
-                          lcl_col = "LCL",
-                          ucl_col = "UCL",
-                          grp_col = NULL,
-                          seq_col = "seq",
-                          label_text = "Label",
-                          ci_sep = " to ",
-                          null_line_at = 1,
-                          arrows = FALSE,
-                          point_size = 2.5,
-                          point_shape = 22,
-                          table_font_size = 3.2,
-                          font_family = "Arial",
-                          color_map = NULL,
-                          table_theme = NULL,
-                          xlim = NULL) {
+                           label_col = 'Label',
+                           est_col = "OR",
+                           lcl_col = "LCL",
+                           ucl_col = "UCL",
+                           grp_col = NULL,
+                           seq_col = "seq",
+                           label_text = "Label",
+                           label_axis = "OR (95% CI)",
+                           ci_sep = " to ",
+                           null_line_at = 1,
+                           arrows = FALSE,
+                           xlim = NULL,
+                           point_size = 2.5,
+                           point_shape = 22,
+                           table_font_size = 3.2,
+                           font_family = "Arial",
+                           color_map = NULL,
+                           plot_theme = NULL) {
     
     # 檢查輸入數據
     required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
@@ -100,7 +116,7 @@ tabular_forest <- function(data,
     # 創建標籤
     p_data$text <- ifelse(
         is.na(p_data[[est_col]]),
-        'OR (95% CI)',
+        label_axis,
         sprintf("%.2f (%.2f%s%.2f)",
                 p_data[[est_col]],
                 p_data[[lcl_col]],
@@ -221,8 +237,8 @@ tabular_forest <- function(data,
       p_left <- p_left + scale_fill_manual(values = fcmap(color_map), na.translate = F)
     }
 
-    if (!is.null(table_theme)) {
-        p_left <- p_left + table_theme + 
+    if (!is.null(plot_theme)) {
+        p_left <- p_left + plot_theme + 
             theme(text = element_text(family = font_family),
                   axis.ticks.y = element_blank(),
                   axis.text.y = ggtext::element_markdown(hjust = 0)
