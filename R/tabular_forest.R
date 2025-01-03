@@ -20,6 +20,7 @@
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
 #' @param plot_theme Custom theme for the plot (default: NULL)
+#' @param insert_label Insert label column to the first row (default: TRUE)
 #'
 #' @return A list with class 'forest_plot' containing three components:
 #'   \itemize{
@@ -85,7 +86,8 @@ tabular_forest <- function(data,
                            table_font_size = 3.2,
                            font_family = "Arial",
                            color_map = NULL,
-                           plot_theme = NULL) {
+                           plot_theme = NULL,
+                           insert_label = TRUE) {
     
     # 檢查輸入數據
     required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
@@ -104,11 +106,13 @@ tabular_forest <- function(data,
     data[[ucl_col]] <- as.numeric(data[[ucl_col]])
 
     # 準備資料
-    empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
-    names(empty_row) <- names(data)
-    empty_row[[seq_col]] <- 0
-    empty_row[[label_col]] <- paste0("<b>", label_text)
-    if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
+    if (insert_label == TRUE){
+      empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
+      names(empty_row) <- names(data)
+      empty_row[[seq_col]] <- 0
+      empty_row[[label_col]] <- paste0("<b>", label_text)
+      if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
+    } else {empty_row = NULL}
 
     # 繪圖資料
     p_data <- 
