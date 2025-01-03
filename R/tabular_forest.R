@@ -48,6 +48,7 @@
 #' tabular_forest(example_data, 
 #'                grp_col = 'grp',
 #'                label_text = "Variables",
+#'                label_table = "HR (95% CI)",
 #'                label_axis = "Hazard Ratio (95% Confidence Intervals)",
 #'                color_map = c("red", "blue", "green"), 
 #'                arrow = T, 
@@ -71,6 +72,7 @@ tabular_forest <- function(data,
                            grp_col = NULL,
                            seq_col = "seq",
                            label_text = "Label",
+                           label_table = "OR (95% CI)",
                            label_axis = "OR (95% CI)",
                            ci_sep = " to ",
                            null_line_at = 1,
@@ -116,7 +118,7 @@ tabular_forest <- function(data,
     # 創建標籤
     p_data$text <- ifelse(
         is.na(p_data[[est_col]]),
-        label_axis,
+        label_table,
         sprintf("%.2f (%.2f%s%.2f)",
                 p_data[[est_col]],
                 p_data[[lcl_col]],
@@ -213,7 +215,7 @@ tabular_forest <- function(data,
         geom_point(color = 'black',
                   size = point_size,
                   shape = point_shape) +
-        labs(x = "OR (95% CI)", y = '', fill = NULL) +
+        labs(x = label_axis, y = '', fill = NULL) +
         guides(fill = guide_legend(override.aes = list(size = 4),
                                 position = "top")) +
         theme(
