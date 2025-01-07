@@ -17,6 +17,9 @@
 #' @param point_size Size of the points (default: 2.5)
 #' @param point_shape Shape of the points (default: 22)
 #' @param errorbar_size Size of errorbar (default: 0.35)
+#' @param errorbar_width Width of errorbar (default: 0.15)
+#' @param errorbar_color Color of errorbar (default: "grey20")
+#' @param text_color Color of x-axis title and y-axis text (default: "black")
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
@@ -85,216 +88,233 @@ tabular_forest <- function(data,
                            point_size = 2.5,
                            point_shape = 22,
                            errorbar_size = 0.35,
+                           errorbar_width = 0.15,
+                           errorbar_color = 'grey20',
+                           text_color = 'black',
                            table_font_size = 3.2,
                            font_family = "Arial",
                            color_map = NULL,
                            plot_theme = NULL,
                            insert_label = TRUE) {
+  
+  # 檢查輸入數據
+  required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
+  missing_cols <- setdiff(required_cols, names(data))
+  if (length(missing_cols) > 0) {
+    stop(sprintf("Missing required columns: %s", paste(missing_cols, collapse = ", ")))
+  }
+  
+  if (!is.null(grp_col) && !(grp_col %in% names(data))) {
+    stop(sprintf("Group column '%s' not found in data", grp_col))
+  }
+  
+  # 確保數值欄位是數值型
+  data[[est_col]] <- as.numeric(data[[est_col]])
+  data[[lcl_col]] <- as.numeric(data[[lcl_col]])
+  data[[ucl_col]] <- as.numeric(data[[ucl_col]])
+  
+  # 準備資料
+  if (insert_label == TRUE){
+    empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
+    names(empty_row) <- names(data)
+    empty_row[[seq_col]] <- 0
+    empty_row[[label_col]] <- paste0("<b>", label_text)
+    empty_row$header <- TRUE
+    if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
+  } else {empty_row = NULL}
+  
+  # 繪圖資料
+  p_data <- 
+    rbind(empty_row, mutate(data, header = FALSE)) |> 
+    select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)), header)
     
-    # 檢查輸入數據
-    required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
-    missing_cols <- setdiff(required_cols, names(data))
-    if (length(missing_cols) > 0) {
-        stop(sprintf("Missing required columns: %s", paste(missing_cols, collapse = ", ")))
-    }
-
-    if (!is.null(grp_col) && !(grp_col %in% names(data))) {
-        stop(sprintf("Group column '%s' not found in data", grp_col))
-    }
-
-    # 確保數值欄位是數值型
-    data[[est_col]] <- as.numeric(data[[est_col]])
-    data[[lcl_col]] <- as.numeric(data[[lcl_col]])
-    data[[ucl_col]] <- as.numeric(data[[ucl_col]])
-
-    # 準備資料
-    if (insert_label == TRUE){
-      empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
-      names(empty_row) <- names(data)
-      empty_row[[seq_col]] <- 0
-      empty_row[[label_col]] <- paste0("<b>", label_text)
-      if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
-    } else {empty_row = NULL}
-
-    # 繪圖資料
-    p_data <- 
-        rbind(empty_row, data) |> 
-        select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)))
-    
-    p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
-
-    # 創建標籤
-    p_data$text <- ifelse(
-        is.na(p_data[[est_col]]),
-        label_table,
-        sprintf("%.2f (%.2f%s%.2f)",
-                p_data[[est_col]],
-                p_data[[lcl_col]],
-                ci_sep,
-                p_data[[ucl_col]])
-    )
-
-    # 預設顏色映射
-    if(!is.null(grp_col)) {
-        grp_lv = levels(as.factor(p_data[[grp_col]]))
-        pal = paletteer::paletteer_d("ggsci::default_igv", length(grp_lv)) |> as.character()
-    } else {
-        grp_lv = NA
-        pal = NA
-    }
-
-    # 自訂顏色映射
-    fcmap = function(color_map) {
-        if (!is.null(color_map)) {
-            color_map
-        } else {
-            setNames(pal, grp_lv)
-        }
-    }
-
-    # 基礎圖形審美設定
-    base_aes <- list(
-        x = quo(!!sym(est_col)),
-        y = quo(fct_rev(!!sym(seq_col)))
-    )
-
-    # 如果有分組，加入填充審美
-    if (!is.null(grp_col)) {
-        base_aes$fill <- quo(!!sym(grp_col))
-    }
-
-    # 左側forest plot
-    p_left <- ggplot(aes(!!!base_aes), data = p_data) +
-        theme_bw() +
-        geom_segment(x = null_line_at, xend = null_line_at,
-                   y = 0,
-                   yend = nrow(data)+.3,
-                   linetype = "dashed", 
-                   color = "gray50", 
-                   size = 0.35) +
-        geom_errorbar(aes(xmin = .data[[lcl_col]],
-                        xmax = .data[[ucl_col]]),
-                    width = 0.15,
-                    alpha = .8,
-                    color = 'gray20',
-                    size = errorbar_size)
-
-    # 處理箭頭
-    if (arrows && !is.null(xlim)) {
-        arrow_data <- p_data[!is.na(p_data[[est_col]]), ]
-        
-        # 右側箭頭
-        right_arrows <- arrow_data[arrow_data[[ucl_col]] > xlim[2], ]
-        if (nrow(right_arrows) > 0) {
-            p_left <- p_left +
-                geom_segment(data = right_arrows,
-                           aes(x = .data[[lcl_col]],
-                               xend = xlim[2],
-                               y = .data[[seq_col]],
-                               yend = .data[[seq_col]]),
-                           alpha = .8,
-                           color = 'gray20',
-                           size = errorbar_size,
-                           arrow = arrow(length = unit(0.2, "cm")))
-        }
-        
-        # 左側箭頭
-        left_arrows <- arrow_data[arrow_data[[lcl_col]] < xlim[1], ]
-        if (nrow(left_arrows) > 0) {
-            p_left <- p_left +
-                geom_segment(data = left_arrows,
-                           aes(x = .data[[ucl_col]],
-                               xend = xlim[1],
-                               y = .data[[seq_col]],
-                               yend = .data[[seq_col]]),
-                           alpha = .8,
-                           color = 'gray20',
-                           size = errorbar_size,
-                           arrow = arrow(length = unit(0.2, "cm")))
-        }
-        
-        # 設定 x 軸範圍
-        p_left <- p_left + 
-            scale_x_continuous(limits = xlim)
-    }
-
-    # 添加點和主題設定
-    p_left <- p_left +
-        geom_point(color = 'black',
-                  size = point_size,
-                  shape = point_shape) +
-        labs(x = label_axis, y = '', fill = NULL) +
-        guides(fill = guide_legend(override.aes = list(size = 4),
-                                position = "top")) +
-        theme(
-            text = element_text(family = font_family),
-            axis.title = element_text(face = "bold"),
-            axis.text.y = ggtext::element_markdown(hjust = 0),
-            legend.title = element_text(face = "bold"),
-            axis.ticks.y = element_blank(),
-            panel.border = element_blank(),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_blank(),
-            axis.line.x = element_line(color = "black")
-        )
-
+  
+  p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
+  
+  # 創建標籤
+  p_data$text <- ifelse(
+    p_data$header,
+    label_table,
+    sprintf("%.2f (%.2f%s%.2f)",
+            p_data[[est_col]],
+            p_data[[lcl_col]],
+            ci_sep,
+            p_data[[ucl_col]])
+  )
+  
+  p_data$text <- ifelse(p_data$text == paste0("NA (NA", ci_sep, "NA)"), "", p_data$text)
+  
+  # 預設顏色映射
+  if(!is.null(grp_col)) {
+    grp_lv = levels(as.factor(p_data[[grp_col]]))
+    pal = paletteer::paletteer_d("ggsci::default_igv", length(grp_lv)) |> as.character()
+  } else {
+    grp_lv = NA
+    pal = NA
+  }
+  
+  # 自訂顏色映射
+  fcmap = function(color_map) {
     if (!is.null(color_map)) {
-      p_left <- p_left + scale_fill_manual(values = fcmap(color_map), na.translate = F)
-    } else if (is.null(grp_col)) {
-      p_left <- p_left + update_geom_defaults(geom = 'point', new = c(fill = 'grey50'))
+      color_map
     } else {
-      p_left <- p_left + scale_fill_manual(values = fcmap(color_map), na.translate = F)
+      setNames(pal, grp_lv)
     }
-
-    if (!is.null(plot_theme)) {
-        p_left <- p_left + plot_theme + 
-            theme(text = element_text(family = font_family),
-                  axis.ticks.y = element_blank(),
-                  axis.text.y = ggtext::element_markdown(hjust = 0)
-                 )
+  }
+  
+  # 基礎圖形審美設定
+  base_aes <- list(
+    x = quo(!!sym(est_col)),
+    y = quo(fct_rev(!!sym(seq_col)))
+  )
+  
+  # 如果有分組，加入填充審美
+  if (!is.null(grp_col)) {
+    base_aes$fill <- quo(!!sym(grp_col))
+    base_aes$color <- quo(!!sym(grp_col))
+  }
+  
+  # 左側forest plot
+  p_left <- ggplot(aes(!!!base_aes), data = p_data) +
+    theme_bw() +
+    geom_segment(x = null_line_at, xend = null_line_at,
+                 y = 0,
+                 yend = nrow(data)+.3,
+                 linetype = "dashed", 
+                 color = "gray50", 
+                 size = 0.35) +
+    geom_errorbar(aes(xmin = .data[[lcl_col]],
+                      xmax = .data[[ucl_col]]
+                      ),
+                  width = errorbar_width,
+                  alpha = .8,
+                  color = errorbar_color,
+                  size = errorbar_size)
+  
+  # 處理箭頭
+  if (arrows && !is.null(xlim)) {
+    arrow_data <- p_data[!is.na(p_data[[est_col]]), ]
+    
+    # 右側箭頭
+    right_arrows <- arrow_data[arrow_data[[ucl_col]] > xlim[2], ]
+    if (nrow(right_arrows) > 0) {
+      p_left <- p_left +
+        geom_segment(data = right_arrows,
+                     aes(x = .data[[lcl_col]],
+                         xend = xlim[2],
+                         y = .data[[seq_col]],
+                         yend = .data[[seq_col]]),
+                     alpha = .8,
+                     color = errorbar_color,
+                     size = errorbar_size,
+                     arrow = arrow(length = unit(0.2, "cm")))
     }
-
-    # 右側數值標籤
-    p_right <- ggplot(data = p_data) +
-        scale_y_discrete(limits = rev(p_data[[seq_col]])) +
-        geom_text(
-            aes(
-                x = 0,
-                y = .data[[seq_col]],
-                label = text
-            ),
-            family = font_family,
-            fontface = ifelse(is.na(p_data[[est_col]]), "bold", "plain"),
-            size = table_font_size,
-            hjust = 0,
-            color = "grey20"
-        ) +
-        theme_void()
-
-    # 定義佈局
-    layout <- c(
-        area(t = 0, l = 0, b = 30, r = 6),
-        area(t = 0, l = 3, b = 30, r = 11)
+    
+    # 左側箭頭
+    left_arrows <- arrow_data[arrow_data[[lcl_col]] < xlim[1], ]
+    if (nrow(left_arrows) > 0) {
+      p_left <- p_left +
+        geom_segment(data = left_arrows,
+                     aes(x = .data[[ucl_col]],
+                         xend = xlim[1],
+                         y = .data[[seq_col]],
+                         yend = .data[[seq_col]]),
+                     alpha = .8,
+                     color = errorbar_color,
+                     size = errorbar_size,
+                     arrow = arrow(length = unit(0.2, "cm")))
+    }
+    
+    # 設定 x 軸範圍
+    p_left <- p_left + 
+      scale_x_continuous(limits = xlim)
+  }
+  
+  # 添加點和主題設定
+  p_left <- p_left +
+    geom_point(size = point_size,
+               shape = point_shape) +
+    labs(x = label_axis, y = '', fill = NULL, color = NULL) +
+    guides(fill = guide_legend(override.aes = list(size = 4), position = "top"),
+           color = guide_legend(override.aes = list(size = 4), position = "top")
+           ) +
+    theme(
+      text = element_text(family = font_family),
+      axis.title = element_text(face = "bold"),
+      axis.text.y = ggtext::element_markdown(hjust = 0, color = text_color),
+      axis.title.x = element_text(color = text_color),
+      legend.title = element_text(face = "bold"),
+      axis.ticks.y = element_blank(),
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      axis.line.x = element_line(color = "black")
     )
-
-    # 組合圖形
-    final_plot <- p_left + p_right + plot_layout(design = layout)
-
-    # 創建結果列表並設定類別
-    result <- structure(
-        list(
-            final = final_plot,
-            left = p_left,
-            right = p_right
-        ),
-        class = c("forest_plot", "meta_plot")
-    )
-
-    # 定義打印方法
-    print.forest_plot <<- function(x, ...) {
-        print(x$final)
-    }
-
-    return(result)
+  
+  if (!is.null(color_map)) {
+    p_left <- p_left + 
+      scale_fill_manual(values = fcmap(color_map), na.translate = F) + 
+      scale_color_manual(values = fcmap(color_map), na.translate = F)
+  } else if (is.null(grp_col)) {
+    p_left <- p_left + 
+      update_geom_defaults(geom = 'point', new = c(fill = 'grey50', color = 'black'))
+  } else {
+    p_left <- p_left + 
+      scale_fill_manual(values = fcmap(color_map), na.translate = F) +
+      scale_color_manual(values = fcmap(color_map), na.translate = F)
+  }
+  
+  if (!is.null(plot_theme)) {
+    p_left <- p_left + plot_theme + 
+      theme(text = element_text(family = font_family),
+            axis.title = element_text(face = "bold"),
+            axis.text.y = ggtext::element_markdown(hjust = 0, color = text_color),
+            axis.title.x = element_text(color = text_color),
+            axis.ticks.y = element_blank()
+      )
+  }
+  
+  # 右側數值標籤
+  p_right <- ggplot(data = p_data) +
+    scale_y_discrete(limits = rev(p_data[[seq_col]])) +
+    geom_text(
+      aes(
+        x = 0,
+        y = .data[[seq_col]],
+        label = text
+      ),
+      family = font_family,
+      fontface = ifelse(is.na(p_data[[est_col]]), "bold", "plain"),
+      size = table_font_size,
+      hjust = 0,
+      color = "grey20"
+    ) +
+    theme_void()
+  
+  # 定義佈局
+  layout <- c(
+    area(t = 0, l = 0, b = 30, r = 6),
+    area(t = 0, l = 3, b = 30, r = 11)
+  )
+  
+  # 組合圖形
+  final_plot <- p_left + p_right + plot_layout(design = layout)
+  
+  # 創建結果列表並設定類別
+  result <- structure(
+    list(
+      final = final_plot,
+      left = p_left,
+      right = p_right
+    ),
+    class = c("forest_plot", "meta_plot")
+  )
+  
+  # 定義打印方法
+  print.forest_plot <<- function(x, ...) {
+    print(x$final)
+  }
+  
+  return(result)
 }
