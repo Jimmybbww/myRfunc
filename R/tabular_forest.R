@@ -16,6 +16,7 @@
 #' @param xlim Limits for x-axis (default: NULL)
 #' @param point_size Size of the points (default: 2.5)
 #' @param point_shape Shape of the points (default: 22)
+#' @param errorbar_size Size of errorbar (default: 0.35)
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
@@ -83,6 +84,7 @@ tabular_forest <- function(data,
                            xlim = NULL,
                            point_size = 2.5,
                            point_shape = 22,
+                           errorbar_size = 0.35,
                            table_font_size = 3.2,
                            font_family = "Arial",
                            color_map = NULL,
@@ -175,7 +177,7 @@ tabular_forest <- function(data,
                     width = 0.15,
                     alpha = .8,
                     color = 'gray20',
-                    size = .35)
+                    size = errorbar_size)
 
     # 處理箭頭
     if (arrows && !is.null(xlim)) {
@@ -192,7 +194,7 @@ tabular_forest <- function(data,
                                yend = .data[[seq_col]]),
                            alpha = .8,
                            color = 'gray20',
-                           size = .35,
+                           size = errorbar_size,
                            arrow = arrow(length = unit(0.2, "cm")))
         }
         
@@ -207,7 +209,7 @@ tabular_forest <- function(data,
                                yend = .data[[seq_col]]),
                            alpha = .8,
                            color = 'gray20',
-                           size = .35,
+                           size = errorbar_size,
                            arrow = arrow(length = unit(0.2, "cm")))
         }
         
