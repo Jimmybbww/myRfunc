@@ -10,6 +10,7 @@
 #' @param label_text Text for empty row label (default: "Label")
 #' @param label_table Text for table label (default: "OR (95% CI)")
 #' @param label_axis Text for x-axis label (default: "OR (95% CI)")
+#' @param label_axis_size Font size for x-axis label (default: 10)
 #' @param ci_sep Separator for confidence intervals (default: " to ")
 #' @param null_line_at Position of reference line (default: 1)
 #' @param arrows Whether to show arrows for out-of-bounds values (default: FALSE)
@@ -81,6 +82,7 @@ tabular_forest <- function(data,
                            label_text = "Label",
                            label_table = "OR (95% CI)",
                            label_axis = "OR (95% CI)",
+                           label_axis_size = 10,
                            ci_sep = " to ",
                            null_line_at = 1,
                            arrows = FALSE,
@@ -125,9 +127,8 @@ tabular_forest <- function(data,
   
   # 繪圖資料
   p_data <- 
-    rbind(empty_row, mutate(data, header = FALSE)) |> 
-    select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)), header)
-    
+    rbind(empty_row, mutate(data, header = FALSE)) ##|> 
+    ##select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)), header)
   
   p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
   
@@ -242,7 +243,7 @@ tabular_forest <- function(data,
       text = element_text(family = font_family),
       axis.title = element_text(face = "bold"),
       axis.text.y = ggtext::element_markdown(hjust = 0, color = text_color),
-      axis.title.x = element_text(color = text_color),
+      axis.title.x = element_text(color = text_color, size = label_axis_size),
       legend.title = element_text(face = "bold"),
       axis.ticks.y = element_blank(),
       panel.border = element_blank(),
@@ -270,7 +271,7 @@ tabular_forest <- function(data,
       theme(text = element_text(family = font_family),
             axis.title = element_text(face = "bold"),
             axis.text.y = ggtext::element_markdown(hjust = 0, color = text_color),
-            axis.title.x = element_text(color = text_color),
+            axis.title.x = element_text(color = text_color, size = label_axis_size),
             axis.ticks.y = element_blank()
       )
   }
@@ -306,9 +307,10 @@ tabular_forest <- function(data,
     list(
       final = final_plot,
       left = p_left,
-      right = p_right
+      right = p_right,
+      data = p_data
     ),
-    class = c("forest_plot", "meta_plot")
+    class = c("forest_plot", "meta_data")
   )
   
   # 定義打印方法
