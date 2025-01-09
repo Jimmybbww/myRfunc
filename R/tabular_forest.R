@@ -162,7 +162,7 @@ tabular_forest <- function(data,
   # 基礎圖形審美設定
   base_aes <- list(
     x = quo(!!sym(est_col)),
-    y = quo(!!sym(seq_col))
+    y = quo(!!sym("seq"))
   )
   
   # 如果有分組，加入填充審美
