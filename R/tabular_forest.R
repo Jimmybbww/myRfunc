@@ -6,7 +6,6 @@
 #' @param lcl_col Column name for lower confidence limits (default: "LCL")
 #' @param ucl_col Column name for upper confidence limits (default: "UCL")
 #' @param grp_col Optional column name for grouping (default: NULL)
-#' @param seq_col Column name for sequence/ordering (default: "seq")
 #' @param label_text Text for empty row label (default: "Label")
 #' @param label_table Text for table label (default: "OR (95% CI)")
 #' @param label_axis Text for x-axis label (default: "OR (95% CI)")
@@ -44,8 +43,7 @@
 #'   OR = c(1.25, 1.50, 0.85, 1.75, 1.15, 1.5),
 #'   LCL = c(1.10, 1.25, 0.2, 0.9, 0.95, 1.2),
 #'   UCL = c(1.40, 1.75, 1.5, 2.6, 1.35, 2.0),
-#'   grp = paste0('Group ', LETTERS[rep(1:3, each=2)]),
-#'   seq = 1:6
+#'   grp = paste0('Group ', LETTERS[rep(1:3, each=2)])
 #'   )
 #'
 #' # Basic forest plot
@@ -78,8 +76,7 @@ tabular_forest <- function(data,
                            lcl_col = "LCL",
                            ucl_col = "UCL",
                            grp_col = NULL,
-                           seq_col = "seq",
-                           label_text = "Label",
+                           label_text = label_col,
                            label_table = "OR (95% CI)",
                            label_axis = "OR (95% CI)",
                            label_axis_size = 10,
@@ -100,7 +97,7 @@ tabular_forest <- function(data,
                            insert_label = TRUE) {
   
   # 檢查輸入數據
-  required_cols <- c(label_col, est_col, lcl_col, ucl_col, seq_col)
+  required_cols <- c(label_col, est_col, lcl_col, ucl_col)
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
     stop(sprintf("Missing required columns: %s", paste(missing_cols, collapse = ", ")))
@@ -119,18 +116,17 @@ tabular_forest <- function(data,
   if (insert_label == TRUE){
     empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
     names(empty_row) <- names(data)
-    empty_row[[seq_col]] <- 0
     empty_row[[label_col]] <- paste0("<b>", label_text)
     empty_row$header <- TRUE
+    empty_row$seq <- nrow(data)+1
     if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
   } else {empty_row = NULL}
   
   # 繪圖資料
-  p_data <- 
-    rbind(empty_row, mutate(data, header = FALSE)) ##|> 
-    ##select(all_of(c(label_col, est_col, lcl_col, ucl_col, grp_col, seq_col)), header)
-  
-  p_data[[seq_col]] = factor(p_data[[seq_col]], labels=p_data[[label_col]])
+  p_data <- rbind(
+    empty_row, 
+    mutate(data, header = FALSE, seq = nrow(data):1)
+    ) 
   
   # 創建標籤
   p_data$text <- ifelse(
@@ -166,7 +162,7 @@ tabular_forest <- function(data,
   # 基礎圖形審美設定
   base_aes <- list(
     x = quo(!!sym(est_col)),
-    y = quo(fct_rev(!!sym(seq_col)))
+    y = quo(!!sym(seq_col))
   )
   
   # 如果有分組，加入填充審美
@@ -178,6 +174,11 @@ tabular_forest <- function(data,
   # 左側forest plot
   p_left <- ggplot(aes(!!!base_aes), data = p_data) +
     theme_bw() +
+    scale_y_continuous(
+      breaks = p_data$seq,
+      labels = p_data[[label_col]],
+      expand = expansion(mult = c(0.03, 0.01))
+    ) + 
     geom_segment(x = null_line_at, xend = null_line_at,
                  y = 0,
                  yend = nrow(data)+.3,
@@ -203,8 +204,8 @@ tabular_forest <- function(data,
         geom_segment(data = right_arrows,
                      aes(x = .data[[lcl_col]],
                          xend = xlim[2],
-                         y = .data[[seq_col]],
-                         yend = .data[[seq_col]]),
+                         y = .data$seq,
+                         yend = .data$seq),
                      alpha = .8,
                      color = errorbar_color,
                      size = errorbar_size,
@@ -218,8 +219,8 @@ tabular_forest <- function(data,
         geom_segment(data = left_arrows,
                      aes(x = .data[[ucl_col]],
                          xend = xlim[1],
-                         y = .data[[seq_col]],
-                         yend = .data[[seq_col]]),
+                         y = .data$seq,
+                         yend = .data$seq),
                      alpha = .8,
                      color = errorbar_color,
                      size = errorbar_size,
@@ -278,11 +279,14 @@ tabular_forest <- function(data,
   
   # 右側數值標籤
   p_right <- ggplot(data = p_data) +
-    scale_y_discrete(limits = rev(p_data[[seq_col]])) +
+    scale_y_continuous(
+      breaks = p_data$seq,
+      expand = expansion(mult = c(0.03, 0.01))
+    ) +
     geom_text(
       aes(
         x = 0,
-        y = .data[[seq_col]],
+        y = .data$seq,
         label = text
       ),
       family = font_family,
