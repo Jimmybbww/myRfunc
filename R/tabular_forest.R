@@ -174,17 +174,16 @@ tabular_forest <- function(data,
   # 左側forest plot
   p_left <- ggplot(aes(!!!base_aes), data = p_data) +
     theme_bw() +
-    scale_y_continuous(
-      breaks = p_data$seq,
-      labels = p_data[[label_col]],
-      expand = expansion(mult = c(0.03, 0.01))
-    ) + 
+    scale_y_continuous(breaks = p_data$seq, 
+                       labels = p_data[[label_col]]
+                       ) + 
     geom_segment(x = null_line_at, xend = null_line_at,
                  y = 0,
                  yend = nrow(data)+.3,
                  linetype = "dashed", 
                  color = "gray50", 
-                 size = 0.35) +
+                 size = 0.35
+                 ) +
     geom_errorbar(aes(xmin = .data[[lcl_col]],
                       xmax = .data[[ucl_col]]
                       ),
@@ -279,10 +278,7 @@ tabular_forest <- function(data,
   
   # 右側數值標籤
   p_right <- ggplot(data = p_data) +
-    scale_y_continuous(
-      breaks = p_data$seq,
-      expand = expansion(mult = c(0.03, 0.01))
-    ) +
+    scale_y_continuous(breaks = p_data$seq) +
     geom_text(
       aes(
         x = 0,
