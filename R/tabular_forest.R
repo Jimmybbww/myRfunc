@@ -14,6 +14,7 @@
 #' @param null_line_at Position of reference line (default: 1)
 #' @param arrows Whether to show arrows for out-of-bounds values (default: FALSE)
 #' @param xlim Limits for x-axis (default: NULL)
+#' @param point_color Color of the points (default: 'black')
 #' @param point_size Size of the points (default: 2.5)
 #' @param point_shape Shape of the points (default: 22)
 #' @param errorbar_size Size of errorbar (default: 0.35)
@@ -23,6 +24,7 @@
 #' @param table_font_size Font size for the table (default: 3.2)
 #' @param font_family Font family (default: "Arial")
 #' @param color_map List of color map (default: NULL)
+#' @param shape_map List of shape map (default: NULL)
 #' @param plot_theme Custom theme for the plot (default: NULL)
 #' @param insert_label Insert label column to the first row (default: TRUE)
 #'
@@ -84,6 +86,7 @@ tabular_forest <- function(data,
                            null_line_at = 1,
                            arrows = FALSE,
                            xlim = NULL,
+                           point_color = 'black',
                            point_size = 2.5,
                            point_shape = 22,
                            errorbar_size = 0.35,
@@ -93,6 +96,7 @@ tabular_forest <- function(data,
                            table_font_size = 3.2,
                            font_family = "Arial",
                            color_map = NULL,
+                           shape_map = NULL,
                            plot_theme = NULL,
                            insert_label = TRUE) {
   
@@ -126,7 +130,7 @@ tabular_forest <- function(data,
   p_data <- rbind(
     empty_row, 
     mutate(data, header = FALSE, seq = nrow(data):1)
-    ) 
+  ) 
   
   # 創建標籤
   p_data$text <- ifelse(
@@ -159,6 +163,24 @@ tabular_forest <- function(data,
     }
   }
   
+  # 預設形狀映射
+  if(!is.null(grp_col)) {
+    grp_lv = levels(as.factor(p_data[[grp_col]]))
+    shp = 21:(20 + length(grp_lv))
+  } else {
+    grp_lv = NA
+    shp = NA
+  }
+  
+  # 自訂形狀映射
+  fhmap = function(shape_map) {
+    if (!is.null(shape_map)) {
+      shape_map
+    } else {
+      setNames(shp, grp_lv)
+    }
+  }
+  
   # 基礎圖形審美設定
   base_aes <- list(
     x = quo(!!sym(est_col)),
@@ -169,6 +191,7 @@ tabular_forest <- function(data,
   if (!is.null(grp_col)) {
     base_aes$fill <- quo(!!sym(grp_col))
     base_aes$color <- quo(!!sym(grp_col))
+    base_aes$shape <- quo(!!sym(grp_col))
   }
   
   # 左側forest plot
@@ -176,21 +199,21 @@ tabular_forest <- function(data,
     theme_bw() +
     scale_y_continuous(breaks = p_data$seq, 
                        labels = p_data[[label_col]]
-                       ) + 
+    ) + 
     geom_segment(x = null_line_at, xend = null_line_at,
                  y = 0,
                  yend = nrow(data)+.3,
                  linetype = "dashed", 
                  color = "gray50", 
                  size = 0.35
-                 ) +
+    ) +
     geom_errorbar(aes(xmin = .data[[lcl_col]],
                       xmax = .data[[ucl_col]]
-                      ),
-                  width = errorbar_width,
-                  alpha = .8,
-                  color = errorbar_color,
-                  size = errorbar_size)
+    ),
+    width = errorbar_width,
+    alpha = .8,
+    color = errorbar_color,
+    size = errorbar_size)
   
   # 處理箭頭
   if (arrows && !is.null(xlim)) {
@@ -233,12 +256,12 @@ tabular_forest <- function(data,
   
   # 添加點和主題設定
   p_left <- p_left +
-    geom_point(size = point_size,
-               shape = point_shape) +
-    labs(x = label_axis, y = '', fill = NULL, color = NULL) +
+    geom_point(size = point_size) +
+    labs(x = label_axis, y = '', fill = NULL, color = NULL, shape = NULL) +
     guides(fill = guide_legend(override.aes = list(size = 4), position = "top"),
-           color = guide_legend(override.aes = list(size = 4), position = "top")
-           ) +
+           color = guide_legend(override.aes = list(size = 4), position = "top"),
+           shape = guide_legend(override.aes = list(size = 4), position = "top")
+    ) +
     theme(
       text = element_text(family = font_family),
       axis.title = element_text(face = "bold"),
@@ -257,14 +280,20 @@ tabular_forest <- function(data,
     p_left <- p_left + 
       scale_fill_manual(values = fcmap(color_map), na.translate = F) + 
       scale_color_manual(values = fcmap(color_map), na.translate = F)
-  } else if (is.null(grp_col)) {
+  } 
+  if (is.null(grp_col)) {
     p_left <- p_left + 
-      update_geom_defaults(geom = 'point', new = c(fill = 'grey50', color = 'black'))
-  } else {
+      update_geom_defaults(geom = 'point', new = c(fill = point_color, color = point_color))
+  } 
+  
+  if (!is.null(shape_map)) {
     p_left <- p_left + 
-      scale_fill_manual(values = fcmap(color_map), na.translate = F) +
-      scale_color_manual(values = fcmap(color_map), na.translate = F)
-  }
+      scale_shape_manual(values = fhmap(shape_map), na.translate = F) 
+  } 
+  if (is.null(grp_col)) {
+    p_left <- p_left + 
+      aes(shape = NULL) + update_geom_defaults(geom = 'point', new = list(shape = point_shape))
+  } 
   
   if (!is.null(plot_theme)) {
     p_left <- p_left + plot_theme + 
