@@ -15,7 +15,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Depends:
-    R (>= 3.5.0),
+    R (>= 3.5.0)
+Imports:
     gt,
     gtsummary,
     huxtable,
@@ -23,12 +24,12 @@ Depends:
     openxlsx,
     ggplot2,
     dplyr,
-    patchwork
-Imports:
+    patchwork,
     rlang,
     paletteer,
     forcats,
     tidyselect,
     grid,
-    scales
+    scales,
+    ggtext
 Config/testthat/edition: 3

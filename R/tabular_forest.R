@@ -100,7 +100,7 @@ tabular_forest <- function(data,
                            plot_theme = NULL,
                            insert_label = TRUE) {
   
-  # 檢查輸入數據
+  # Check input data
   required_cols <- c(label_col, est_col, lcl_col, ucl_col)
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
@@ -111,12 +111,12 @@ tabular_forest <- function(data,
     stop(sprintf("Group column '%s' not found in data", grp_col))
   }
   
-  # 確保數值欄位是數值型
+  # Ensure numeric columns are numeric type
   data[[est_col]] <- as.numeric(data[[est_col]])
   data[[lcl_col]] <- as.numeric(data[[lcl_col]])
   data[[ucl_col]] <- as.numeric(data[[ucl_col]])
   
-  # 準備資料
+  # Prepare data
   if (insert_label == TRUE){
     empty_row <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
     names(empty_row) <- names(data)
@@ -126,13 +126,13 @@ tabular_forest <- function(data,
     if(!is.null(grp_col)) empty_row[[grp_col]] <- NA
   } else {empty_row = NULL}
   
-  # 繪圖資料
+  # Plot data
   p_data <- rbind(
     empty_row, 
     mutate(data, header = FALSE, seq = nrow(data):1)
   ) 
   
-  # 創建標籤
+  # Create labels
   p_data$text <- ifelse(
     p_data$header,
     label_table,
@@ -145,7 +145,7 @@ tabular_forest <- function(data,
   
   p_data$text <- ifelse(p_data$text == paste0("NA (NA", ci_sep, "NA)"), "", p_data$text)
   
-  # 預設顏色映射
+  # Default color mapping
   if(!is.null(grp_col)) {
     grp_lv = levels(as.factor(p_data[[grp_col]]))
     pal = paletteer::paletteer_d("ggsci::default_igv", length(grp_lv)) |> as.character()
@@ -154,7 +154,7 @@ tabular_forest <- function(data,
     pal = NA
   }
   
-  # 自訂顏色映射
+  # Custom color mapping
   fcmap = function(color_map) {
     if (!is.null(color_map)) {
       color_map
@@ -163,7 +163,7 @@ tabular_forest <- function(data,
     }
   }
   
-  # 預設形狀映射
+  # Default shape mapping
   if(!is.null(grp_col)) {
     grp_lv = levels(as.factor(p_data[[grp_col]]))
     shp = 21:(20 + length(grp_lv))
@@ -172,7 +172,7 @@ tabular_forest <- function(data,
     shp = NA
   }
   
-  # 自訂形狀映射
+  # Custom shape mapping
   fhmap = function(shape_map) {
     if (!is.null(shape_map)) {
       shape_map
@@ -181,20 +181,20 @@ tabular_forest <- function(data,
     }
   }
   
-  # 基礎圖形審美設定
+  # Base plot aesthetics
   base_aes <- list(
     x = quo(!!sym(est_col)),
     y = quo(!!sym("seq"))
   )
   
-  # 如果有分組，加入填充審美
+  # If grouping exists, add fill aesthetics
   if (!is.null(grp_col)) {
     base_aes$fill <- quo(!!sym(grp_col))
     base_aes$color <- quo(!!sym(grp_col))
     base_aes$shape <- quo(!!sym(grp_col))
   }
   
-  # 左側forest plot
+  # Left side forest plot
   p_left <- ggplot(aes(!!!base_aes), data = p_data) +
     theme_bw() +
     scale_y_continuous(breaks = p_data$seq, 
@@ -215,11 +215,11 @@ tabular_forest <- function(data,
     color = errorbar_color,
     size = errorbar_size)
   
-  # 處理箭頭
+  # Handle arrows
   if (arrows && !is.null(xlim)) {
     arrow_data <- p_data[!is.na(p_data[[est_col]]), ]
     
-    # 右側箭頭
+    # Right side arrows
     right_arrows <- arrow_data[arrow_data[[ucl_col]] > xlim[2], ]
     if (nrow(right_arrows) > 0) {
       p_left <- p_left +
@@ -234,7 +234,7 @@ tabular_forest <- function(data,
                      arrow = arrow(length = unit(0.2, "cm")))
     }
     
-    # 左側箭頭
+    # Left side arrows
     left_arrows <- arrow_data[arrow_data[[lcl_col]] < xlim[1], ]
     if (nrow(left_arrows) > 0) {
       p_left <- p_left +
@@ -249,12 +249,12 @@ tabular_forest <- function(data,
                      arrow = arrow(length = unit(0.2, "cm")))
     }
     
-    # 設定 x 軸範圍
+    # Set x-axis range
     p_left <- p_left + 
       scale_x_continuous(limits = xlim)
   }
   
-  # 添加點和主題設定
+  # Add points and theme settings
   p_left <- p_left +
     geom_point(size = point_size) +
     labs(x = label_axis, y = '', fill = NULL, color = NULL, shape = NULL) +
@@ -305,7 +305,7 @@ tabular_forest <- function(data,
       )
   }
   
-  # 右側數值標籤
+  # Right side numeric labels
   p_right <- ggplot(data = p_data) +
     scale_y_continuous(breaks = p_data$seq) +
     geom_text(
@@ -322,16 +322,16 @@ tabular_forest <- function(data,
     ) +
     theme_void()
   
-  # 定義佈局
+  # Define layout
   layout <- c(
     area(t = 0, l = 0, b = 30, r = 6),
     area(t = 0, l = 3, b = 30, r = 11)
   )
   
-  # 組合圖形
+  # Combine plots
   final_plot <- p_left + p_right + plot_layout(design = layout)
   
-  # 創建結果列表並設定類別
+  # Create result list and set class
   result <- structure(
     list(
       final = final_plot,
@@ -341,11 +341,14 @@ tabular_forest <- function(data,
     ),
     class = c("forest_plot", "meta_data")
   )
-  
-  # 定義打印方法
-  print.forest_plot <<- function(x, ...) {
-    print(x$final)
-  }
-  
+
   return(result)
+}
+
+#' Print method for forest_plot objects
+#' @param x A forest_plot object
+#' @param ... Additional arguments (not used)
+#' @export
+print.forest_plot <- function(x, ...) {
+  print(x$final)
 }

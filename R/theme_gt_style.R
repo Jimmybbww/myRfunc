@@ -53,6 +53,13 @@ theme_gt_style <- function(gt_object,
                           bg.color = "#F2F1E9",
                           strip.bg.color = "#FFFAEE") {
 
+  # Validate style parameter
+  valid_styles <- c("strip", "bw", "bg")
+  if (!style %in% valid_styles) {
+    stop(sprintf("Invalid style '%s'. Must be one of: %s",
+                 style, paste(valid_styles, collapse = ", ")))
+  }
+
   if(is.null(title)) title = NULL else title = gt::md(paste0("**",title,"**"))
 
   if (style == 'strip') {strip = TRUE; bg.color = "white"; strip.bg.color = strip.bg.color; body.hlines = gt::px(0)}

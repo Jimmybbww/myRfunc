@@ -1,5 +1,34 @@
+# R session files
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# R project files
+*.Rproj
+
+# macOS files
 .DS_Store
+
+# IDE files
+.vscode/
+.idea/
+
+# Package build files
+*.tar.gz
+*.zip
+*.Rcheck/
+*.o
+*.so
+*.dll
+
+# Documentation files
+docs/
+doc/
+Meta/
+
+# Temporary files
+*~
+*.swp
+*.swo
+.Rproj.user
