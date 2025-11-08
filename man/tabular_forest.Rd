@@ -11,37 +11,83 @@ tabular_forest(
   lcl_col = "LCL",
   ucl_col = "UCL",
   grp_col = NULL,
-  seq_col = "seq",
-  label_text = "Label",
+  label_text = label_col,
+  label_table = "OR (95\% CI)",
+  label_axis = "OR (95\% CI)",
+  label_axis_size = 10,
   ci_sep = " to ",
   null_line_at = 1,
   arrows = FALSE,
+  xlim = NULL,
+  point_color = 'black',
   point_size = 2.5,
   point_shape = 22,
+  errorbar_size = 0.35,
+  errorbar_width = 0.15,
+  errorbar_color = 'grey20',
+  text_color = 'black',
   table_font_size = 3.2,
   font_family = "Arial",
-  table_theme = NULL,
-  xlim = NULL
+  color_map = NULL,
+  shape_map = NULL,
+  plot_theme = NULL,
+  insert_label = TRUE
 )
 }
 \arguments{
 \item{data}{A data frame containing the data to plot}
+
 \item{label_col}{Column name for labels (default: 'Label')}
+
 \item{est_col}{Column name for point estimates (default: "OR")}
+
 \item{lcl_col}{Column name for lower confidence limits (default: "LCL")}
+
 \item{ucl_col}{Column name for upper confidence limits (default: "UCL")}
+
 \item{grp_col}{Optional column name for grouping (default: NULL)}
-\item{seq_col}{Column name for sequence/ordering (default: "seq")}
-\item{label_text}{Text for empty row label (default: "Label")}
+
+\item{label_text}{Text for empty row label (default: 'Label')}
+
+\item{label_table}{Text for table label (default: "OR (95\% CI)")}
+
+\item{label_axis}{Text for x-axis label (default: "OR (95\% CI)")}
+
+\item{label_axis_size}{Font size for x-axis label (default: 10)}
+
 \item{ci_sep}{Separator for confidence intervals (default: " to ")}
+
 \item{null_line_at}{Position of reference line (default: 1)}
+
 \item{arrows}{Whether to show arrows for out-of-bounds values (default: FALSE)}
-\item{point_size}{Size of the points (default: 2.5)}
-\item{point_shape}{Shape of the points (default: 22)}
-\item{table_font_size}{Font size for the table (default: 3.2)}
-\item{font_family}{Font family (default: "Arial")}
-\item{table_theme}{Custom theme for the plot (default: NULL)}
+
 \item{xlim}{Limits for x-axis (default: NULL)}
+
+\item{point_color}{Color of the points (default: 'black')}
+
+\item{point_size}{Size of the points (default: 2.5)}
+
+\item{point_shape}{Shape of the points (default: 22)}
+
+\item{errorbar_size}{Size of errorbar (default: 0.35)}
+
+\item{errorbar_width}{Width of errorbar (default: 0.15)}
+
+\item{errorbar_color}{Color of errorbar (default: "grey20")}
+
+\item{text_color}{Color of x-axis title and y-axis text (default: "black")}
+
+\item{table_font_size}{Font size for the table (default: 3.2)}
+
+\item{font_family}{Font family (default: "Arial")}
+
+\item{color_map}{List of color map (default: NULL)}
+
+\item{shape_map}{List of shape map (default: NULL)}
+
+\item{plot_theme}{Custom theme for the plot (default: NULL)}
+
+\item{insert_label}{Insert label column to the first row (default: TRUE)}
 }
 \value{
 A list with class 'forest_plot' containing three components:
@@ -49,31 +95,45 @@ A list with class 'forest_plot' containing three components:
     \item final: The combined forest plot with table
     \item left: The forest plot component
     \item right: The table component
+    \item data: The processed plot data
   }
 }
 \description{
-This function creates a forest plot combined with a table of results. It is
-particularly useful for visualizing odds ratios, risk ratios, or other
-effect measures with confidence intervals.
+Create a Forest Plot with Tabular Data
 }
 \examples{
 \dontrun{
-# Create sample data
-data <- data.frame(
-  Label = c("Group A", "Group B", "Group C"),
-  OR = c(1.5, 8.2, 0.3),
-  LCL = c(0.9, 6.5, 0.1),
-  UCL = c(2.1, 12.5, 0.8),
-  seq = 1:3
-)
+# Create example data
+example_data <- data.frame(
+  Label = paste0("Variable", 1:6),
+  OR = c(1.25, 1.50, 0.85, 1.75, 1.15, 1.5),
+  LCL = c(1.10, 1.25, 0.2, 0.9, 0.95, 1.2),
+  UCL = c(1.40, 1.75, 1.5, 2.6, 1.35, 2.0),
+  grp = paste0('Group ', LETTERS[rep(1:3, each=2)])
+  )
 
 # Basic forest plot
-tabular_forest(data)
+tabular_forest(example_data[,-5])
+tabular_forest(example_data, grp_col = 'grp')
 
-# Forest plot with arrows for out-of-bounds values
-tabular_forest(data,
-               xlim = c(0.5, 5),
-               arrows = TRUE,
-               null_line_at = 1)
+# Other customized forest plot
+tabular_forest(example_data,
+               grp_col = 'grp',
+               label_text = "Variables",
+               label_table = "HR (95\% CI)",
+               label_axis = "\\nHazard Ratio (95\% CI)",
+               color_map = c("red", "blue", "green"),
+               arrow = T,
+               xlim = c(0.5, 2.2),
+               ci_sep = ", ",
+               point_size = 3,
+               point_shape = 21,
+               font_family = "mono",
+               table_font_size = 4.2,
+               plot_theme = theme(legend.text = element_text(size = 12),
+                                  axis.text = element_text(size = 12),
+                                  axis.title.x = element_text(size = 14)
+                                  )
+               )
 }
 }

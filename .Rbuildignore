@@ -1,0 +1,13 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git$
+^\.gitignore$
+^README\.Rmd$
+^LICENSE\.md$
+^\.github$
+^\.vscode$
+^\.idea$
+^\.DS_Store$
+^\.Rhistory$
+^\.RData$
+^\.Ruserdata$
